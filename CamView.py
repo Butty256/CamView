@@ -1,43 +1,46 @@
 import cv2
-#import time
-#from timeout_decorator import timeout, TimeoutError
-#import sys
+import time
+import concurrent.futures as futures
+import sys
 import math
-
-#@timeout(10)
-#def VideoCapture2(num):
-#    return cv2.VideoCapture(num)
-## end
+import numpy
 
 if __name__ == '__main__':
-    #try:
-    #    capture = VideoCapture2(0)
-    #except TimeoutError:
-    #    print("test timed out :(")
-    #    sys.exit()
-    #else:
-    #    print("test finished successfully :)")
-    capture = cv2.VideoCapture(1)
     windowname = 'CamView'
+    num = 0
+    capture = cv2.VideoCapture(num, cv2.CAP_DSHOW)
 
     while(True):
         ret, frame = capture.read()
+        if frame is None:
+            frame = numpy.zeros((9, 16, 3))
+        # end
 
         cv2.namedWindow(windowname, cv2.WINDOW_GUI_EXPANDED | cv2.WINDOW_NORMAL)
+
         x, y, w, h = cv2.getWindowImageRect(windowname)
-        cv2.imshow(windowname, frame)
         gcd = math.gcd(frame.shape[1], frame.shape[0])
         wr = int(frame.shape[1] / gcd)
         hr = int(frame.shape[0] / gcd)
-        #print(math.gcd(frame.shape[1], frame.shape[0]))
         if h / frame.shape[0] > w / frame.shape[1]:
-            cv2.resizeWindow(windowname, (int(w / wr) * wr, int(w * frame.shape[0] / frame.shape[1] / hr) * hr))
+            windowsize = (int(w / wr) * wr, int(w * frame.shape[0] / frame.shape[1] / hr) * hr)
         #end
         else:
-            cv2.resizeWindow(windowname, (int(h * frame.shape[1] / frame.shape[0] / wr) * wr, int(h / hr) * hr))
+            windowsize = (int(h * frame.shape[1] / frame.shape[0] / wr) * wr, int(h / hr) * hr)
         #end
-        if cv2.waitKey(1) & 0xFF == 27:
+        cv2.resizeWindow(windowname, windowsize)
+        frame = cv2.resize(frame, windowsize, cv2.INTER_AREA)
+
+        cv2.imshow(windowname, frame)
+
+        key = cv2.waitKey(1)
+        if key & 0xFF == 27:
             break
+        # end
+        elif key & 0xFF== 32:
+            capture.release()
+            num = (num + 1) % 5
+            capture = cv2.VideoCapture(num, cv2.CAP_DSHOW)
         # end
     # end
 
